@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 from configs import configure_argument_parser, configure_logging
-from constants import BASE_DIR, MAIN_DOC_URL, PEP_URL
+from constants import BASE_DIR, EXPECTED_STATUS, MAIN_DOC_URL, PEPS_URL
 from outputs import control_output
 from utils import get_response, find_tag
 
@@ -89,40 +89,53 @@ def download(session):
 
 
 def pep(session):
-    response = get_response(session, PEP_URL)
+    response = get_response(session, PEPS_URL)
     if response is None:
         return
-    soup = BeautifulSoup(response.text, 'lxml')
-    pep_tables = soup.find_all('table', attrs={'class': 'pep-zero-table'})
-    pep_links = []
-    pep_statuses = []
+    peps_soup = BeautifulSoup(response.text, 'lxml')
+    pep_tables = peps_soup.find_all(
+        'table', attrs={'class': 'pep-zero-table'}
+        )
+    statuses = []
+    for tuple_of_statuses in EXPECTED_STATUS.values():
+        for status in tuple_of_statuses:
+            statuses.append(status)
+    pep_counts = {
+        status: zero for (status, zero) in zip(statuses, [0] * len(statuses))
+        }
+    total_count = 0
     for table in pep_tables:
         table_statuses_tags = table.find_all('abbr')
         table_statuses = [
-            status_tag.text[-1] for status_tag in table_statuses_tags
+            status_tag.text[1:] for status_tag in table_statuses_tags
             ]
         if not table_statuses:
             table_statuses.append('')
-        pep_statuses.extend(table_statuses)
-        logging.info(table_statuses)
         pattern = r'^\d+$'
         table_links_tags = table.find_all('a', text=re.compile(pattern))
-        table_links = [
-            PEP_URL + link_tag['href'] for link_tag in table_links_tags
-            ]
-        pep_links.extend(table_links)
-    results = [("Ссылки", "Статусы")]
-    logging.info(len(pep_statuses), len(pep_links))
-    for i in range(len(pep_statuses)):
-        results.append((pep_links[i], pep_statuses[i]))
+        for link_tag, preview_status in zip(table_links_tags, table_statuses):
+            pep_link = PEPS_URL + link_tag['href']
+            response = get_response(session, pep_link)
+            if response is None:
+                return
+            pep_soup = BeautifulSoup(response.text, 'lxml')
+            pep_status = find_tag(pep_soup, 'abbr').text
+            if pep_status not in EXPECTED_STATUS[preview_status]:
+                error_message = (
+                    f'Несовпадающие статусы:\n'
+                    f'{pep_link}\n'
+                    f'Статус в карточке: {pep_status}\n'
+                    f'Ожидаемые статусы: {EXPECTED_STATUS[preview_status]}\n')
+                logging.warning(error_message)
+            if pep_status not in pep_counts:
+                pep_counts[pep_status] = 0
+            pep_counts[pep_status] += 1
+            total_count += 1
+    fields_names = [('Статус PEP', 'Количество')]
+    results = (
+        fields_names + list(pep_counts.items()) + [('Total', total_count)]
+        )
     return results
-
-
-
-
-
-
-
 
 
 MODE_TO_FUNCTION = {
