@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 from configs import configure_argument_parser, configure_logging
-from constants import BASE_DIR, MAIN_DOC_URL
+from constants import BASE_DIR, MAIN_DOC_URL, PEP_URL
 from outputs import control_output
 from utils import get_response, find_tag
 
@@ -17,7 +17,7 @@ def whats_new(session):
     response = get_response(session, whats_new_url)
     if response is None:
         return
-    soup = BeautifulSoup(response.text, features='lxml')
+    soup = BeautifulSoup(response.text, 'lxml')
 
     main_div = find_tag(soup, 'section', attrs={'id': 'what-s-new-in-python'})
     div_with_ul = find_tag(main_div, 'div', attrs={'class': 'toctree-wrapper'})
@@ -72,7 +72,7 @@ def download(session):
     response = get_response(session, downloads_url)
     if response is None:
         return
-    soup = BeautifulSoup(response.text, features='lxml')
+    soup = BeautifulSoup(response.text, 'lxml')
     table = find_tag(soup, 'table', {'class': 'docutils'})
     pattern = r'.+pdf-a4\.zip$'
     pdf_a4_tag = find_tag(table, 'a', {'href': re.compile(pattern)})
@@ -88,10 +88,48 @@ def download(session):
     logging.info(f'Архив был загружен и сохранён: {archive_path}')
 
 
+def pep(session):
+    response = get_response(session, PEP_URL)
+    if response is None:
+        return
+    soup = BeautifulSoup(response.text, 'lxml')
+    pep_tables = soup.find_all('table', attrs={'class': 'pep-zero-table'})
+    pep_links = []
+    pep_statuses = []
+    for table in pep_tables:
+        table_statuses_tags = table.find_all('abbr')
+        table_statuses = [
+            status_tag.text[-1] for status_tag in table_statuses_tags
+            ]
+        if not table_statuses:
+            table_statuses.append('')
+        pep_statuses.extend(table_statuses)
+        logging.info(table_statuses)
+        pattern = r'^\d+$'
+        table_links_tags = table.find_all('a', text=re.compile(pattern))
+        table_links = [
+            PEP_URL + link_tag['href'] for link_tag in table_links_tags
+            ]
+        pep_links.extend(table_links)
+    results = [("Ссылки", "Статусы")]
+    logging.info(len(pep_statuses), len(pep_links))
+    for i in range(len(pep_statuses)):
+        results.append((pep_links[i], pep_statuses[i]))
+    return results
+
+
+
+
+
+
+
+
+
 MODE_TO_FUNCTION = {
     'whats-new': whats_new,
     'latest-versions': latest_versions,
     'download': download,
+    'pep': pep
 }
 
 
