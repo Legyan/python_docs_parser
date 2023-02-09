@@ -25,12 +25,12 @@ def whats_new(session):
         'li', attrs={'class': 'toctree-l1'}
         )
 
-    results = [('Ссылка на статью', 'Заголовок', 'Редактор, автор')]
+    results = [('Ссылка на статью', 'Заголовок', 'Редактор, Автор')]
     for section in tqdm(sections_by_python):
         version_a_tag = section.find('a')
         href = version_a_tag['href']
         version_link = urljoin(whats_new_url, href)
-        response = get_response(section, version_link)
+        response = get_response(session, version_link)
         if response is None:
             continue
         soup = BeautifulSoup(response.text, features='lxml')
@@ -96,15 +96,16 @@ def pep(session):
     pep_tables = peps_soup.find_all(
         'table', attrs={'class': 'pep-zero-table'}
         )
-    statuses = []
+    preset_statuses = []
     for tuple_of_statuses in EXPECTED_STATUS.values():
         for status in tuple_of_statuses:
-            statuses.append(status)
+            preset_statuses.append(status)
     pep_counts = {
-        status: zero for (status, zero) in zip(statuses, [0] * len(statuses))
+        status: zero
+        for (status, zero) in zip(preset_statuses, [0] * len(preset_statuses))
         }
     total_count = 0
-    for table in pep_tables:
+    for table in tqdm(pep_tables):
         table_statuses_tags = table.find_all('abbr')
         table_statuses = [
             status_tag.text[1:] for status_tag in table_statuses_tags
@@ -121,19 +122,21 @@ def pep(session):
             pep_soup = BeautifulSoup(response.text, 'lxml')
             pep_status = find_tag(pep_soup, 'abbr').text
             if pep_status not in EXPECTED_STATUS[preview_status]:
-                error_message = (
+                mismatch_status_message = (
                     f'Несовпадающие статусы:\n'
                     f'{pep_link}\n'
                     f'Статус в карточке: {pep_status}\n'
-                    f'Ожидаемые статусы: {EXPECTED_STATUS[preview_status]}\n')
-                logging.warning(error_message)
+                    f'Ожидаемые статусы: {EXPECTED_STATUS[preview_status]}')
+                logging.info(mismatch_status_message)
             if pep_status not in pep_counts:
                 pep_counts[pep_status] = 0
             pep_counts[pep_status] += 1
             total_count += 1
-    fields_names = [('Статус PEP', 'Количество')]
+    fields_names = [('Статус', 'Количество')]
     results = (
-        fields_names + list(pep_counts.items()) + [('Total', total_count)]
+        fields_names +
+        list(pep_counts.items()) +
+        [('Total', total_count)]
         )
     return results
 
@@ -152,12 +155,9 @@ def main():
     arg_parser = configure_argument_parser(MODE_TO_FUNCTION.keys())
     args = arg_parser.parse_args()
     logging.info(f'Аргументы командной строки: {args}')
-
     session = requests_cache.CachedSession()
-
     if args.clear_cache:
         session.cache.clear()
-
     parser_mode = args.mode
     results = MODE_TO_FUNCTION[parser_mode](session)
     if results:
