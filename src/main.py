@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from configs import configure_argument_parser, configure_logging
 from constants import BASE_DIR, EXPECTED_STATUS, MAIN_DOC_URL, PEPS_URL
-from outputs import control_output
+from outputs import default_output, file_output, pretty_output
 from utils import get_response, find_tag
 
 
@@ -81,10 +81,23 @@ def download(session):
     archive_response = session.get(archive_url)
     filename = archive_url.split('/')[-1]
     downloads_dir = BASE_DIR / 'downloads'
-    downloads_dir.mkdir(exist_ok=True)
-    archive_path = downloads_dir / filename
-    with open(archive_path, 'wb') as file:
-        file.write(archive_response.content)
+    try:
+        downloads_dir.mkdir(exist_ok=True)
+        archive_path = downloads_dir / filename
+        with open(archive_path, 'wb') as file:
+            file.write(archive_response.content)
+    except PermissionError:
+        logging.exception(
+            f'Недостаточно прав для создания файлов в {BASE_DIR}',
+            exc_info=True
+            )
+        raise
+    except OSError:
+        logging.exception(
+            f'Ошибка при работе с файлами в {BASE_DIR}',
+            exc_info=True
+            )
+        raise
     logging.info(f'Архив был загружен и сохранён: {archive_path}')
 
 
@@ -161,7 +174,13 @@ def main():
     parser_mode = args.mode
     results = MODE_TO_FUNCTION[parser_mode](session)
     if results:
-        control_output(results, args)
+        output = args.output
+        if output == 'pretty':
+            pretty_output(results)
+        elif output == 'file':
+            file_output(results, args)
+        else:
+            default_output(results)
     logging.info('Парсер завершил работу.')
 
 

@@ -2,11 +2,7 @@ import argparse
 import logging
 from logging.handlers import RotatingFileHandler
 
-from constants import BASE_DIR
-
-
-LOG_FORMAT = '"%(asctime)s - [%(levelname)s] - %(message)s"'
-DT_FORMAT = '%d.%m.%Y %H:%M:%S'
+from constants import BASE_DIR, DT_FORMAT, LOG_FORMAT
 
 
 def configure_argument_parser(available_modes):
@@ -33,7 +29,18 @@ def configure_argument_parser(available_modes):
 
 def configure_logging():
     log_dir = BASE_DIR / 'logs'
-    log_dir.mkdir(exist_ok=True)
+    try:
+        log_dir.mkdir(exist_ok=True)
+    except PermissionError:
+        logging.exception(
+            f'Недостаточно прав для создания папки {log_dir}', exc_info=True
+            )
+        raise
+    except OSError:
+        logging.exception(
+            f'Ошибка при создании папки {log_dir}', exc_info=True
+            )
+        raise
     log_file = log_dir / 'parser.log'
     rotating_handler = RotatingFileHandler(
         log_file, maxBytes=10 ** 6,

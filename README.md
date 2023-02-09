@@ -67,3 +67,69 @@ python src/main.py {whats-new, latest-versions, download, pep} [-h] [-c] [-o {pr
 Опциональный аргумент [-c, --cache] осуществляет очистку кеша перед запуском парсера.
 
 Опциональный аргумент [-o {pretty, file}] определяет режим вывода парсера. При отсутствии аргумента будет осуществлён стандартный вывод в терминал.
+
+### Примеры команд:
+
+- Для запуска парсера в режиме сбора данных о PEP с табличным выводом в треминал:
+
+```
+python src/main.py pep -o pretty
+```
+
+Ответ парсера в терминале:
+
+```
++-------------+------------+
+| Статус      | Количество |
++-------------+------------+
+| Active      | 63         |
+| Accepted    | 86         |
+| Deferred    | 72         |
+| Final       | 538        |
+| Provisional | 0          |
+| Rejected    | 240        |
+| Superseded  | 40         |
+| Withdrawn   | 110        |
+| Draft       | 56         |
+| April Fool! | 2          |
+| Total       | 1207       |
++-------------+------------+
+```
+
+- Для запуска парсера в режиме сбора данных о версиях Python c очисткой кеша и стандартным выводом в терминал:
+
+```
+python src/main.py latest-versions -c
+```
+
+Ответ парсера в терминале:
+
+```
+Ссылка на документацию Версия Статус
+https://docs.python.org/3.12/ 3.12 in development
+https://docs.python.org/3.11/ 3.11 stable
+https://docs.python.org/3.10/ 3.10 stable
+https://docs.python.org/3.9/ 3.9 security-fixes
+https://docs.python.org/3.8/ 3.8 security-fixes
+https://docs.python.org/3.7/ 3.7 security-fixes
+https://docs.python.org/3.6/ 3.6 EOL
+https://docs.python.org/3.5/ 3.5 EOL
+https://docs.python.org/2.7/ 2.7 EOL
+https://www.python.org/doc/versions/ All versions 
+```
+
+- Для запуска парсера в режиме загрузки документации Python:
+
+```
+python src/main.py download
+```
+
+Архив формата .zip с документацией будет загружен в директорию 'downloads' внутри директории с запускаемым файлом.
+
+- Для запуска парсера в режиме сбора данных об изменениях в версиях Python с выводом в файл:
+
+```
+python src/main.py whats-new -o file
+```
+
+Файл формата .csv будет загружен в директорию 'results' внутри директории с запускаемым файлом.
