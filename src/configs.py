@@ -1,6 +1,5 @@
 import argparse
-import logging
-from logging.handlers import RotatingFileHandler
+import logging.handlers
 
 from constants import BASE_DIR, DT_FORMAT, LOG_FORMAT
 
@@ -42,7 +41,7 @@ def configure_logging():
             )
         raise
     log_file = log_dir / 'parser.log'
-    rotating_handler = RotatingFileHandler(
+    rotating_handler = logging.handlers.RotatingFileHandler(
         log_file, maxBytes=10 ** 6,
         backupCount=5, encoding='utf-8'
     )
