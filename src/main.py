@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from configs import configure_argument_parser, configure_logging
 from constants import BASE_DIR, EXPECTED_STATUS, MAIN_DOC_URL, PEPS_URL
-from outputs import default_output, file_output, pretty_output
+from outputs import control_output
 from utils import get_response, find_tag
 
 
@@ -174,13 +174,7 @@ def main():
     parser_mode = args.mode
     results = MODE_TO_FUNCTION[parser_mode](session)
     if results:
-        output = args.output
-        if output == 'pretty':
-            pretty_output(results)
-        elif output == 'file':
-            file_output(results, args)
-        else:
-            default_output(results)
+        control_output(results, args)
     logging.info('Парсер завершил работу.')
 
 
