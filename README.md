@@ -29,7 +29,7 @@ ____
 ### Запуск проекта
 - Клонировать репозиторий:
 ```
-git clone https://github.com/Legyan/bs4_parser_pep
+git clone https://github.com/Legyan/python_docs_parser
 ```
 
 - Cоздать и активировать виртуальное окружение:
