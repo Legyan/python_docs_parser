@@ -82,17 +82,17 @@ python src/main.py pep -o pretty
 +-------------+------------+
 | Статус      | Количество |
 +-------------+------------+
-| Active      | 63         |
-| Accepted    | 86         |
-| Deferred    | 72         |
-| Final       | 538        |
+| Active      | 31         |
+| Accepted    | 44         |
+| Deferred    | 36         |
+| Final       | 269        |
 | Provisional | 0          |
-| Rejected    | 240        |
-| Superseded  | 40         |
-| Withdrawn   | 110        |
-| Draft       | 56         |
-| April Fool! | 2          |
-| Total       | 1207       |
+| Rejected    | 120        |
+| Superseded  | 20         |
+| Withdrawn   | 55         |
+| Draft       | 29         |
+| April Fool! | 1          |
+| Total       | 605        |
 +-------------+------------+
 ```
 

@@ -106,9 +106,10 @@ def pep(session):
     if response is None:
         return
     peps_soup = BeautifulSoup(response.text, 'lxml')
-    pep_tables = peps_soup.find_all(
-        'table', attrs={'class': 'pep-zero-table'}
-        )
+    section = find_tag(
+        peps_soup, 'section', attrs={'id': 'numerical-index'}
+    )
+    table = find_tag(section, 'tbody')
     preset_statuses = []
     for tuple_of_statuses in EXPECTED_STATUS.values():
         for status in tuple_of_statuses:
@@ -118,33 +119,32 @@ def pep(session):
         for (status, zero) in zip(preset_statuses, [0] * len(preset_statuses))
         }
     total_count = 0
-    for table in tqdm(pep_tables):
-        table_statuses_tags = table.find_all('abbr')
-        table_statuses = [
-            status_tag.text[1:] for status_tag in table_statuses_tags
-            ]
-        if not table_statuses:
-            table_statuses.append('')
-        pattern = r'^\d+$'
-        table_links_tags = table.find_all('a', text=re.compile(pattern))
-        for link_tag, preview_status in zip(table_links_tags, table_statuses):
-            pep_link = PEPS_URL + link_tag['href']
-            response = get_response(session, pep_link)
-            if response is None:
-                return
-            pep_soup = BeautifulSoup(response.text, 'lxml')
-            pep_status = find_tag(pep_soup, 'abbr').text
-            if pep_status not in EXPECTED_STATUS[preview_status]:
-                mismatch_status_message = (
-                    f'Несовпадающие статусы:\n'
-                    f'{pep_link}\n'
-                    f'Статус в карточке: {pep_status}\n'
-                    f'Ожидаемые статусы: {EXPECTED_STATUS[preview_status]}')
-                logging.info(mismatch_status_message)
-            if pep_status not in pep_counts:
-                pep_counts[pep_status] = 0
-            pep_counts[pep_status] += 1
-            total_count += 1
+    table_statuses_tags = table.find_all('abbr')
+    table_statuses = [
+        status_tag.text[1:] for status_tag in table_statuses_tags
+        ]
+    if not table_statuses:
+        table_statuses.append('')
+    pattern = r'^\d+$'
+    table_links_tags = table.find_all('a', text=re.compile(pattern))
+    for link_tag, preview_status in zip(table_links_tags, table_statuses):
+        pep_link = PEPS_URL + link_tag['href']
+        response = get_response(session, pep_link)
+        if response is None:
+            return
+        pep_soup = BeautifulSoup(response.text, 'lxml')
+        pep_status = find_tag(pep_soup, 'abbr').text
+        if pep_status not in EXPECTED_STATUS[preview_status]:
+            mismatch_status_message = (
+                f'Несовпадающие статусы:\n'
+                f'{pep_link}\n'
+                f'Статус в карточке: {pep_status}\n'
+                f'Ожидаемые статусы: {EXPECTED_STATUS[preview_status]}')
+            logging.info(mismatch_status_message)
+        if pep_status not in pep_counts:
+            pep_counts[pep_status] = 0
+        pep_counts[pep_status] += 1
+        total_count += 1
     fields_names = [('Статус', 'Количество')]
     results = (
         fields_names +
